@@ -42,6 +42,19 @@ const questions = [
         name: "employeeManager",
         when: (response) => response.employeeRole
     },
+    // questions to ask if Update employee role is selected
+    {
+        type: "input",
+        message: "Which employee's role do you want to update?",
+        name: "employee",
+        when: (response) => response.option === "Update employee role"
+    },
+    {
+        type: "input",
+        message: "Which role do you want to assign the selected employee?",
+        name: "newRole",
+        when: (response) => response.employee
+    },
     // questions to ask if Add role is selected
     {
         type: "input",
