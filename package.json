@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "inquirer": "^8.2.4",
-    "pg-promise": "^11.6.0"
+    "pg": "^8.12.0"
   }
 }

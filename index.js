@@ -1,4 +1,4 @@
-const pgp = require("pg-promise");
+const pg = require("pg");
 const inquirer = require("inquirer");
 
 // conditional prompt depending on choice
