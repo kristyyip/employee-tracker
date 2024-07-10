@@ -1,5 +1,6 @@
 const pg = require("pg");
 const inquirer = require("inquirer");
+const {findEmployees, findRoles, findDepartments} = require("./db")
 
 // conditional prompt depending on choice
 // src: https://stackoverflow.com/questions/56412516/conditional-prompt-rendering-in-inquirer
@@ -95,17 +96,17 @@ const showPrompt = (questions) => {
         // otherwise, show, add to, or update table depending on selection
         else {
             if (response.option === "View all employees") {
-                
+                findEmployees();
             } else if (response.option === "Add employee") {
 
             } else if (response.option === "Update employee role") {
 
             } else if (response.option === "View all roles") {
-
+                findRoles();
             } else if (response.option === "Add role") {
                 
             } else if (response.option === "View all departments") {
-                
+                findDepartments();
             } else {
 
             }
