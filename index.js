@@ -2,10 +2,9 @@ const pg = require("pg");
 const inquirer = require("inquirer");
 const { Console } = require('console');
 const { Transform } = require('stream');
-const {findEmployees, findDeptEmployees, findRoles, findDeptRole, findDepartments, addEmployee, addRole, addDepartment} = require("./db");
-const { create } = require("domain");
+const {findEmployees, findDeptEmployees, updateEmployee, findRoles, findDeptRole, findDepartments, addEmployee, addRole, addDepartment} = require("./db");
 
-// remove (index) column from console.table
+// table formatting since (index) column shows when using console.table
 // src: https://stackoverflow.com/questions/49618069/remove-index-from-console-table
 function table(input) {
     // @see https://stackoverflow.com/a/67859384
@@ -25,7 +24,8 @@ function table(input) {
     console.log(`\n${result}`);
   }
 
-  async function createRoleChoices() {
+// function to dynamically list role choices for prompt by querying database
+async function createRoleChoices() {
     const {rows} = await findRoles();
     const roleChoices = rows.map(({id, title}) => 
         ({
@@ -37,6 +37,7 @@ function table(input) {
     return roleChoices;
 }
 
+// function to dynamically list employee choices for prompt by querying database
 async function createEmployeeChoices() {
     const {rows} = await findEmployees();
     const employeeChoices = rows.map(({id, first_name, last_name}) => 
@@ -49,11 +50,13 @@ async function createEmployeeChoices() {
     return employeeChoices;
 }
 
+// function to find the department id given a role (needed to create a dynamic list of manager options)
 async function findDeptID(roleID) {
     const {rows} = await findDeptRole(roleID);
     return rows[0].department;
 }
 
+// function to dynamically list manager choices for prompt by querying database
 async function createManagerChoices(roleID) {
     const deptID = await findDeptID(roleID);
 
@@ -68,6 +71,7 @@ async function createManagerChoices(roleID) {
     return managerChoices;
 }
 
+// function to dynamically list department choices for prompt by querying database
 async function createDeptChoices() {
     const {rows} = await findDepartments();
     const deptChoices = rows.map(({id, name}) => 
@@ -80,6 +84,7 @@ async function createDeptChoices() {
     return deptChoices;
 }
 
+// function to ask questions about employee info and inserts data into database
 async function addEmployeePrompt() {
     const roleChoices = await createRoleChoices();
     
@@ -94,6 +99,8 @@ async function addEmployeePrompt() {
             type: "input",
             message: "What is the employee's last name name?",
             name: "lastName",
+            // prompt shows up after previous prompt is answered
+            // src: https://stackoverflow.com/questions/56412516/conditional-prompt-rendering-in-inquirer
             when: (response) => response.firstName
         },
         {
@@ -118,11 +125,40 @@ async function addEmployeePrompt() {
         },])
         .then((res) => {
             addEmployee(response.firstName, response.lastName, response.employeeRole, res.employeeManager);
+            console.log(`Added ${response.firstName} ${response.lastName} to database`);
         })
     })
 
 }
 
+// function to ask questions about employee info and update data into database
+async function updateEmployeePrompt() {
+    const employeeChoices = await createEmployeeChoices();
+    const roleChoices = await createRoleChoices()
+
+    await inquirer
+    .prompt([
+        {
+            type: "list",
+            message: "Which employee's role do you want to update?",
+            name: "employee",
+            choices: employeeChoices,
+        },
+        {
+            type: "list",
+            message: "Which role do you want to assign the selected employee?",
+            name: "newRole",
+            choices: roleChoices,
+            when: (response) => response.employee
+        },
+    ])
+    .then((response) => {
+        updateEmployee(response.employee, response.newRole);
+        console.log("Updated employee's role")
+    })
+}
+
+// // function to ask questions about role info and inserts data into database
 async function addRolePrompt() {
     const deptChoices = await createDeptChoices();
 
@@ -149,41 +185,45 @@ async function addRolePrompt() {
     ])
     .then((response) => {
         addRole(response.title, response.salary, response.deptID);
+        console.log(`Added ${response.title} to database`);
     })
 }
 
-
-// conditional prompt depending on choice
-// src: https://stackoverflow.com/questions/56412516/conditional-prompt-rendering-in-inquirer
-const questions = [
-    {
-    type: "list",
-    message: "What would you like to do?",
-    name: "option",
-    choices: ["View all employees", 
-        "Add employee", 
-        "Update employee role", 
-        "View all roles",
-        "Add role",
-        "View all departments",
-        "Add department",
-        "Quit"
-    ]},
-    // questions to ask if Add employee is selected
-    
-    // questions to ask if Update employee role is selected
-    
-    // questions to ask if Add role is selected
-    
-    // question to ask if Add department is selected
-   
-]
+// // function to ask questions about department info and inserts data into database
+async function addDepartmentPrompt() {
+    await inquirer
+    .prompt([
+        {
+            type: "input",
+            message: "What is the name of the department?",
+            name: "dept",
+        }
+    ])
+    .then((response) => {
+        addDepartment(response.dept);
+        console.log(`Added ${response.dept} to database`);
+    })
+}
 
 // function to show inquirer prompt to user
-const showPrompt = (questions) => {
+const showPrompt = () => {
     inquirer
-    .prompt(questions)
-    .then((response) => {
+    .prompt([
+        {
+        type: "list",
+        message: "What would you like to do?",
+        name: "option",
+        choices: ["View all employees", 
+            "Add employee", 
+            "Update employee role", 
+            "View all roles",
+            "Add role",
+            "View all departments",
+            "Add department",
+            "Quit"
+        ]},
+    ])
+    .then(async (response) => {
         // if user selects Quit, exit out of inquirer promopt
         if (response.option === "Quit") {
             process.exit();
@@ -191,40 +231,25 @@ const showPrompt = (questions) => {
         // otherwise, show, add to, or update table depending on selection
         else {
             if (response.option === "View all employees") {
-                findEmployees()
+                await findEmployees()
                     .then(({rows}) => table(rows));
             } else if (response.option === "Add employee") {
-                addEmployeePrompt();
+                await addEmployeePrompt();
             } else if (response.option === "Update employee role") {
-                // {
-                //     type: "input",
-                //     message: "Which employee's role do you want to update?",
-                //     name: "employee",
-                //     when: (response) => response.option === "Update employee role"
-                // },
-                // {
-                //     type: "input",
-                //     message: "Which role do you want to assign the selected employee?",
-                //     name: "newRole",
-                //     when: (response) => response.employee
-                // },
+                await updateEmployeePrompt();
             } else if (response.option === "View all roles") {
-                findRoles()
+                await findRoles()
                     .then(({rows}) => table(rows));
             } else if (response.option === "Add role") {
-                addRolePrompt();
+                await addRolePrompt();
             } else if (response.option === "View all departments") {
                 findDepartments()
                     .then(({rows}) => table(rows));
             } else {
-                // {
-                //     type: "input",
-                //     message: "What is the name of the department?",
-                //     name: "dept",
-                //     when: (response) => response.option === "Add department"
-                // }
+                await addDepartmentPrompt();
             }
+            await showPrompt();
     }})
 }
 
-showPrompt(questions);
+showPrompt();

@@ -22,6 +22,11 @@ function findDeptEmployees(departmentID) {
   return pool.query("SELECT e.id, first_name, last_name, department FROM employee as e LEFT JOIN role on e.role_id = role.id WHERE department = $1;", [departmentID])
 }
 
+// function to update employee
+function updateEmployee(employeeID, roleID) {
+  return pool.query("UPDATE employee SET role_id = $1 WHERE id = $2;", [roleID, employeeID])
+}
+
 // function to view all roles
 function findRoles() {
   return pool.query("SELECT role.id, title, department.name as department, salary FROM role JOIN department ON role.department = department.id");
@@ -47,8 +52,6 @@ function addRole(title, salary, deptName) {
 
 function addDepartment(dept) {
   return pool.query("INSERT INTO department (name) VALUES ($1);", [dept]);
-
-  // console.log(`Added ${dept} to the database`)
 }
 
-module.exports = {findEmployees, findDeptEmployees, findRoles, findDeptRole, findDepartments, addEmployee, addRole, addDepartment}
+module.exports = {findEmployees, findDeptEmployees, updateEmployee, findRoles, findDeptRole, findDepartments, addEmployee, addRole, addDepartment}
