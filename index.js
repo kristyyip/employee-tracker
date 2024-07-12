@@ -58,7 +58,7 @@ async function findDeptID(roleID) {
     return rows[0].department;
 }
 
-// function to dynamically list manager choices for prompt by querying database
+// function to dynamically list manager choices in a given department for prompt by querying database
 async function createManagerChoices(roleID) {
     const deptID = await findDeptID(roleID);
 
@@ -262,7 +262,7 @@ const showPrompt = () => {
             } else if (response.option === "Add role") {
                 await addRolePrompt();
             } else if (response.option === "View all departments") {
-                findDepartments()
+                await findDepartments()
                     .then(({rows}) => table(rows));
             } else {
                 await addDepartmentPrompt();
