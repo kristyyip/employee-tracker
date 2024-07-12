@@ -17,6 +17,7 @@ function findEmployees() {
   return pool.query("SELECT e1.id, e1.first_name, e1.last_name, role.title, department.name as department, salary, CONCAT(e2.first_name, ' ', e2.last_name) as manager FROM employee AS e1 LEFT JOIN role ON e1.role_id = role.id LEFT JOIN department ON role.department = department.id LEFT JOIN employee AS e2 on e1.manager_id = e2.id;");
 }
 
+// function to find employees in a given department
 function findDeptEmployees(departmentID) {
   return pool.query("SELECT e.id, first_name, last_name, department FROM employee as e LEFT JOIN role on e.role_id = role.id WHERE department = $1;", [departmentID])
 }
@@ -26,6 +27,7 @@ function findRoles() {
   return pool.query("SELECT role.id, title, department.name as department, salary FROM role JOIN department ON role.department = department.id");
 }
 
+// function to find the department for given a role
 function findDeptRole(roleID) {
   return pool.query("SELECT department FROM role WHERE id = $1;", [roleID]);
 }

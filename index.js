@@ -68,8 +68,20 @@ async function createManagerChoices(roleID) {
     return managerChoices;
 }
 
+async function createDeptChoices() {
+    const {rows} = await findDepartments();
+    const deptChoices = rows.map(({id, name}) => 
+        ({
+            value: id, 
+            name: name,
+        })
+    );
+
+    return deptChoices;
+}
+
 async function addEmployeePrompt() {
-    let roleChoices = await createRoleChoices();
+    const roleChoices = await createRoleChoices();
     
     await inquirer
     .prompt([
@@ -94,6 +106,7 @@ async function addEmployeePrompt() {
     ])
     .then(async (response) => {
         let managerChoices = await createManagerChoices(response.employeeRole);
+        managerChoices.push({value: null, name: "None"})
 
         await inquirer
         .prompt([
@@ -110,17 +123,35 @@ async function addEmployeePrompt() {
 
 }
 
-async function createDeptChoices() {
-    const {rows} = await findDepartments();
-    const deptChoices = rows.map(({id, name}) => 
-        ({
-            value: id, 
-            name: name,
-        })
-    );
+async function addRolePrompt() {
+    const deptChoices = await createDeptChoices();
 
-    return deptChoices;
+    await inquirer
+    .prompt([
+        {
+            type: "input",
+            message: "What is the name of the role?",
+            name: "title",
+        },
+        {
+            type: "input",
+            message: "What is the salary of the role?",
+            name: "salary",
+            when: (response) => response.title
+        },
+        {
+            type: "list",
+            message: "Which department does the role belong to?",
+            name: "deptID",
+            choices: deptChoices,
+            when: (response) => response.salary
+        },
+    ])
+    .then((response) => {
+        addRole(response.title, response.salary, response.deptID);
+    })
 }
+
 
 // conditional prompt depending on choice
 // src: https://stackoverflow.com/questions/56412516/conditional-prompt-rendering-in-inquirer
@@ -181,25 +212,7 @@ const showPrompt = (questions) => {
                 findRoles()
                     .then(({rows}) => table(rows));
             } else if (response.option === "Add role") {
-                // {
-                //     type: "input",
-                //     message: "What is the name of the role?",
-                //     name: "title",
-                //     when: (response) => response.option === "Add role"
-                // },
-                // {
-                //     type: "input",
-                //     message: "What is the salary of the role?",
-                //     name: "salary",
-                //     when: (response) => response.title
-                // },
-                // {
-                //     type: "input",
-                //     message: "Which department does the role belong to?",
-                //     name: "deptName",
-                //     // choices: deptChoices,
-                //     when: (response) => response.salary
-                // },
+                addRolePrompt();
             } else if (response.option === "View all departments") {
                 findDepartments()
                     .then(({rows}) => table(rows));
