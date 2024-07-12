@@ -70,6 +70,9 @@ async function createManagerChoices(roleID) {
         })
     );
 
+    // add a "None" option
+    managerChoices.push({value: null, name: "None"})
+
     return managerChoices;
 }
 
@@ -114,17 +117,17 @@ async function addEmployeePrompt() {
         },
     ])
     .then(async (response) => {
-        let managerChoices = await createManagerChoices(response.employeeRole);
-        managerChoices.push({value: null, name: "None"})
+        const managerChoices = await createManagerChoices(response.employeeRole);
 
         await inquirer
         .prompt([
-        {
-            type: "list",
-            message: "Who's the employee's manager?",
-            choices: managerChoices,
-            name: "employeeManager"
-        },])
+            {
+                type: "list",
+                message: "Who's the employee's manager?",
+                choices: managerChoices,
+                name: "employeeManager"
+            },
+        ])
         .then((res) => {
             addEmployee(response.firstName, response.lastName, response.employeeRole, res.employeeManager);
             console.log(`Added ${response.firstName} ${response.lastName} to database`);
@@ -154,9 +157,22 @@ async function updateEmployeePrompt() {
             when: (response) => response.employee
         },
     ])
-    .then((response) => {
-        updateEmployee(response.employee, response.newRole);
-        console.log("Updated employee's role")
+    .then(async (response) => {
+        const managerChoices = await createManagerChoices(response.newRole);
+
+        await inquirer
+        .prompt([
+            {
+                type: "list",
+                message: "Who's the new employee's manager?",
+                choices: managerChoices,
+                name: "employeeManager"
+            }
+        ])
+        .then((res) => {
+            updateEmployee(response.employee, response.newRole, res.employeeManager);
+            console.log("Updated employee's role")
+        })
     })
 }
 

@@ -14,7 +14,7 @@ pool.connect();
 
 // function to view all employees
 function findEmployees() {
-  return pool.query("SELECT e1.id, e1.first_name, e1.last_name, role.title, department.name as department, salary, CONCAT(e2.first_name, ' ', e2.last_name) as manager FROM employee AS e1 LEFT JOIN role ON e1.role_id = role.id LEFT JOIN department ON role.department = department.id LEFT JOIN employee AS e2 on e1.manager_id = e2.id;");
+  return pool.query("SELECT e1.id, e1.first_name, e1.last_name, role.title, department.name as department, salary, CONCAT(e2.first_name, ' ', e2.last_name) as manager FROM employee AS e1 LEFT JOIN role ON e1.role_id = role.id LEFT JOIN department ON role.department = department.id LEFT JOIN employee AS e2 on e1.manager_id = e2.id ORDER BY e1.id;");
 }
 
 // function to find employees in a given department
@@ -23,8 +23,8 @@ function findDeptEmployees(departmentID) {
 }
 
 // function to update employee
-function updateEmployee(employeeID, roleID) {
-  return pool.query("UPDATE employee SET role_id = $1 WHERE id = $2;", [roleID, employeeID])
+function updateEmployee(employeeID, roleID, managerID) {
+  return pool.query("UPDATE employee SET role_id = $1, manager_id = $3 WHERE id = $2;", [roleID, employeeID, managerID])
 }
 
 // function to view all roles
