@@ -27,6 +27,8 @@ function table(input) {
 // function to dynamically list role choices for prompt by querying database
 async function createRoleChoices() {
     const {rows} = await findRoles();
+    // loop through array to create new array in choices format
+    // src: https://stackoverflow.com/questions/65415706/how-to-get-index-value-of-choice-made-with-inquirer
     const roleChoices = rows.map(({id, title}) => 
         ({
             value: id, 
@@ -210,17 +212,17 @@ const showPrompt = () => {
     inquirer
     .prompt([
         {
-        type: "list",
-        message: "What would you like to do?",
-        name: "option",
-        choices: ["View all employees", 
-            "Add employee", 
-            "Update employee role", 
-            "View all roles",
-            "Add role",
-            "View all departments",
-            "Add department",
-            "Quit"
+            type: "list",
+            message: "What would you like to do?",
+            name: "option",
+            choices: ["View all employees", 
+                "Add employee", 
+                "Update employee role", 
+                "View all roles",
+                "Add role",
+                "View all departments",
+                "Add department",
+                "Quit"
         ]},
     ])
     .then(async (response) => {
@@ -229,6 +231,7 @@ const showPrompt = () => {
             process.exit();
         }
         // otherwise, show, add to, or update table depending on selection
+        // once those actions are completed, show initial prompt again
         else {
             if (response.option === "View all employees") {
                 await findEmployees()
@@ -248,7 +251,9 @@ const showPrompt = () => {
             } else {
                 await addDepartmentPrompt();
             }
-            await showPrompt();
+
+            // use recursion to show prompt again
+            showPrompt();
     }})
 }
 
